@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>آشپزخانه اتمی استاد بور</title>
+<style>
+  :root{
+    --proton:#ef4444; --neutron:#64748b; --electron:#fbbf24;
+    --gold:#fbbf24; --green:#4ade80; --red:#ef4444; --purple:#8b5cf6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{width:100%;height:100%;height:100dvh;overflow:hidden;
+    font-family:Tahoma,'Segoe UI',sans-serif;
+    background:radial-gradient(ellipse at center top,#2a1a5e 0%,#0a0a20 60%,#000 100%);
+    color:#fff;touch-action:manipulation;overscroll-behavior:none}
+  
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+    height:100vh;height:100dvh;padding-top:env(safe-area-inset-top)}
+  
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;overflow-y:auto}
+  .screen.active{opacity:1;pointer-events:auto}
+  
+  .title{font-size:clamp(22px,6.5vw,44px);text-align:center;
+    background:linear-gradient(135deg,#fbbf24,#e94560,#8b5cf6);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    font-weight:bold;margin-bottom:14px;line-height:1.5;
+    filter:drop-shadow(0 0 16px rgba(233,69,96,.4))}
+  .subtitle{font-size:clamp(13px,3.4vw,17px);color:#a0a0d0;text-align:center;margin-bottom:28px;line-height:1.9;max-width:520px}
+  
+  .btn{padding:16px 36px;font-size:clamp(15px,3.8vw,19px);font-family:inherit;
+    border:2px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#e94560,#8b5cf6);
+    color:#fff;border-radius:16px;cursor:pointer;font-weight:bold;
+    transition:transform .15s,box-shadow .15s;box-shadow:0 8px 20px rgba(139,92,246,.4);
+    min-height:54px;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(139,92,246,.6)}
+  .btn:active{transform:scale(.97)}
+  .btn.secondary{background:rgba(255,255,255,.1);box-shadow:none;border-color:rgba(255,255,255,.3)}
+  
+  .story-card{background:linear-gradient(135deg,rgba(30,30,70,.96),rgba(50,20,80,.96));
+    border:2px solid rgba(139,92,246,.5);border-radius:22px;padding:clamp(18px,4vw,28px);
+    max-width:600px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);
+    max-height:calc(100dvh - 40px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .story-title{color:var(--gold);font-size:clamp(17px,4.2vw,24px);margin-bottom:16px;text-align:center;line-height:1.5}
+  .story-text{font-size:clamp(13px,3.2vw,16px);line-height:2;color:#e0e0f0;text-align:center;margin-bottom:20px}
+  .story-text b{color:var(--gold)}
+  .story-char{font-size:clamp(52px,13vw,72px);text-align:center;margin-bottom:12px;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  
+  #gameScreen{padding:0;justify-content:flex-start;overflow:hidden}
+  
+  /* ==== Top bar ==== */
+  .topbar{width:100%;display:flex;justify-content:space-between;align-items:center;
+    padding:6px 12px;background:rgba(0,0,0,.45);
+    border-bottom:1.5px solid rgba(139,92,246,.35);gap:6px;flex-wrap:nowrap;z-index:10;min-height:40px}
+  .topbar-item{display:flex;align-items:center;gap:4px;font-size:clamp(11px,2.8vw,14px);font-weight:bold;white-space:nowrap}
+  .hearts{color:var(--red);letter-spacing:1px}
+  .score{color:var(--gold)}
+  .combo-badge{background:linear-gradient(135deg,#fbbf24,#e94560);padding:3px 10px;
+    border-radius:20px;font-size:clamp(10px,2.4vw,12px);animation:pulse 1s ease-in-out infinite;font-weight:bold}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  
+  /* ==== Customer area ==== */
+  .customer-area{padding:8px 12px;display:flex;align-items:center;gap:8px;
+    width:100%;max-width:740px;margin:0 auto;flex-shrink:0}
+  .customer-emoji{font-size:clamp(34px,9vw,52px);animation:bob 2s ease-in-out infinite;flex-shrink:0;line-height:1}
+  .order-bubble{background:#fff;color:#1a1a2e;padding:8px 14px;
+    border-radius:16px 16px 16px 4px;font-size:clamp(11px,2.8vw,15px);font-weight:bold;
+    position:relative;flex:1;line-height:1.55;box-shadow:0 3px 10px rgba(0,0,0,.3);min-width:0;word-wrap:break-word}
+  .order-bubble::before{content:'';position:absolute;right:-7px;top:16px;
+    border:7px solid transparent;border-left-color:#fff;border-right:0}
+  .order-hint{display:block;font-size:.72em;color:#666;margin-top:3px;font-weight:normal;line-height:1.5}
+  
+  /* ==== Timer ==== */
+  .timer-bar{width:calc(100% - 24px);max-width:740px;height:7px;background:rgba(255,255,255,.12);
+    border-radius:4px;margin:2px auto 4px;overflow:hidden;flex-shrink:0}
+  .timer-fill{height:100%;background:linear-gradient(90deg,var(--green),#06b6d4);
+    border-radius:4px;transition:width .1s linear,background .3s;width:100%}
+  .timer-fill.warning{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+  .timer-fill.danger{background:var(--red);animation:blink .55s infinite}
+  @keyframes blink{50%{opacity:.45}}
+  
+  /* ==== Atom plate ==== */
+  .atom-plate{flex:1;display:flex;align-items:center;justify-content:center;
+    padding:4px;min-height:0;position:relative;overflow:hidden}
+  #atomSvg{max-height:100%;max-width:100%;width:auto;height:100%;aspect-ratio:1;display:block}
+  
+  /* ==== Status panel ==== */
+  .status-panel{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);
+    padding:6px 10px;border-radius:11px;font-size:clamp(10px,2.4vw,12px);line-height:1.5;
+    border:1px solid rgba(139,92,246,.4);backdrop-filter:blur(6px);z-index:5;min-width:96px}
+  .status-panel .label{color:#a0a0d0}
+  .status-panel .value{color:#fff;font-weight:bold}
+  .status-panel .atom-name{color:var(--gold);font-size:1.1em;display:block;
+    margin-bottom:3px;text-align:center;font-weight:bold}
+  
+  /* ==== Controls ==== */
+  .controls{padding:8px 10px;padding-bottom:max(10px,env(safe-area-inset-bottom));
+    background:rgba(0,0,0,.6);border-top:1.5px solid rgba(139,92,246,.35);
+    display:flex;flex-direction:column;gap:8px;z-index:10;flex-shrink:0}
+  
+  .particle-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .particle-card{position:relative;display:flex;flex-direction:column;align-items:center;
+    padding:8px 4px 6px 4px;background:rgba(30,30,70,.85);
+    border:2px solid rgba(100,100,200,.35);border-radius:12px;cursor:pointer;
+    transition:all .12s;min-height:76px;justify-content:center;gap:2px}
+  .particle-card:active{transform:scale(.94);background:rgba(60,60,120,.9)}
+  .particle-card.proton{border-color:rgba(239,68,68,.55)}
+  .particle-card.neutron{border-color:rgba(100,116,139,.55)}
+  .particle-card.electron{border-color:rgba(251,191,36,.55)}
+  
+  .btn-row{display:flex;align-items:center;gap:4px;font-size:clamp(10px,2.4vw,12px);font-weight:bold}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor;flex-shrink:0}
+  .particle-card.proton .dot{color:var(--proton)}
+  .particle-card.neutron .dot{color:var(--neutron)}
+  .particle-card.electron .dot{color:var(--electron)}
+  .count{font-size:clamp(17px,4.5vw,22px);font-weight:bold;line-height:1;color:#fff}
+  
+  .minus-btn{position:absolute;bottom:3px;left:3px;width:26px;height:26px;
+    border-radius:50%;background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.3);color:#fff;font-size:16px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;font-family:inherit}
+  .minus-btn:active{background:rgba(239,68,68,.6);transform:scale(.9)}
+  
+  .action-buttons{display:flex;gap:7px}
+  .serve-btn{flex:1;padding:13px;font-size:clamp(13px,3.4vw,16px);font-family:inherit;font-weight:bold;
+    background:linear-gradient(135deg,#4ade80,#06b6d4);color:#fff;border:none;
+    border-radius:12px;cursor:pointer;box-shadow:0 4px 16px rgba(74,222,128,.35);
+    transition:all .12s;min-height:50px}
+  .serve-btn:active{transform:scale(.97)}
+  .serve-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .clear-btn{padding:13px 16px;font-size:clamp(12px,2.8vw,14px);font-family:inherit;
+    background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);
+    border-radius:12px;cursor:pointer;min-height:50px;min-width:56px}
+  .clear-btn:active{transform:scale(.95);background:rgba(239,68,68,.4)}
+  
+  /* ==== Toast ==== */
+  .toast{position:fixed;top:22%;left:50%;transform:translateX(-50%) translateY(-16px) scale(.9);
+    padding:12px 22px;border-radius:14px;font-size:clamp(14px,3.6vw,18px);font-weight:bold;
+    color:#fff;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:1000;
+    text-align:center;max-width:88vw;box-shadow:0 10px 30px rgba(0,0,0,.6);line-height:1.55;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  .toast.success{background:linear-gradient(135deg,#4ade80,#06b6d4)}
+  .toast.error{background:linear-gradient(135deg,#ef4444,#e94560)}
+  .toast.info{background:linear-gradient(135deg,#8b5cf6,#3b82f6)}
+  
+  /* ==== BG particles ==== */
+  .bg-particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .bg-p{position:absolute;border-radius:50%;opacity:.12;animation:float linear infinite}
+  @keyframes float{0%{transform:translateY(105vh) rotate(0);opacity:0}
+    10%{opacity:.14}90%{opacity:.14}100%{transform:translateY(-100px) rotate(360deg);opacity:0}}
+  
+  @keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,4px)}
+    40%{transform:translate(9px,-4px)}60%{transform:translate(-7px,-3px)}80%{transform:translate(7px,3px)}}
+  .shake{animation:shake .4s}
+  
+  .result-icon{font-size:clamp(64px,15vw,84px);margin-bottom:16px;text-align:center}
+  .stat-row{display:flex;justify-content:space-between;padding:8px 0;
+    border-bottom:1px solid rgba(255,255,255,.1);font-size:clamp(13px,3.2vw,16px)}
+  .stat-row:last-child{border-bottom:none}
+  .stat-row .label{color:#a0a0d0}
+  .stat-row .value{color:var(--gold);font-weight:bold}
+  
+  .sound-toggle{position:fixed;top:calc(8px + env(safe-area-inset-top));right:8px;width:36px;height:36px;border-radius:50%;
+    background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);color:#fff;
+    font-size:16px;cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+  .sound-toggle:active{transform:scale(.9)}
+  
+  /* ==== Landscape / very short screens ==== */
+  @media (max-height:520px){
+    .customer-area{padding:4px 10px}
+    .customer-emoji{font-size:28px}
+    .order-bubble{padding:5px 10px;font-size:10px}
+    .order-hint{font-size:.65em;margin-top:1px}
+    .particle-card{min-height:62px;padding:5px 3px 4px 3px}
+    .count{font-size:16px}
+    .serve-btn,.clear-btn{min-height:42px;padding:9px}
+    .controls{padding:5px 8px;gap:5px}
+    .topbar{min-height:34px;padding:4px 10px}
+  }
+  
+  @media (orientation:landscape) and (max-height:500px){
+    #gameScreen{flex-direction:row;flex-wrap:wrap}
+    .topbar{order:1;flex-basis:100%}
+    .customer-area{order:2;flex:1;max-width:45%}
+    .timer-bar{order:3;flex:0 0 45%}
+    .atom-plate{order:4;flex:1 1 45%}
+    .controls{order:5;flex:1 1 45%}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-particles" id="bgParticles"></div>
+<button class="sound-toggle" id="soundToggle" aria-label="صدا">🔊</button>
+
+<div id="app">
+
+  <!-- ===== START ===== -->
+  <div class="screen active" id="startScreen">
+    <div class="story-char">👨‍🍳</div>
+    <h1 class="title">آشپزخانه اتمی استاد بور</h1>
+    <p class="subtitle">
+      به رستوران فضایی خوش اومدی!<br>
+      مشتری‌ها اتم و ایزوتوپ سفارش می‌دن.<br>
+      تو باید با <b style="color:#ef4444">پروتون</b>، <b style="color:#94a3b8">نوترون</b> و <b style="color:#fbbf24">الکترون</b><br>
+      دقیقاً همون چیزی که می‌خوان بسازی!
+    </p>
+    <button class="btn" id="startBtn">شروع کار 🚀</button>
+  </div>
+
+  <!-- ===== STORY ===== -->
+  <div class="screen" id="storyScreen">
+    <div class="story-card">
+      <div class="story-char" id="storyEmoji">👨‍🍳</div>
+      <h2 class="story-title" id="storyTitle"></h2>
+      <p class="story-text" id="storyText"></p>
+      <button class="btn" id="storyBtn" style="width:100%">ادامه ▶</button>
+    </div>
+  </div>
+
+  <!-- ===== GAME ===== -->
+  <div class="screen" id="gameScreen">
+    <div class="topbar">
+      <div class="topbar-item" id="levelInfo">فصل ۱</div>
+      <div class="topbar-item hearts" id="heartsDisplay">❤️❤️❤️</div>
+      <div class="topbar-item score" id="scoreDisplay">💰 0</div>
+      <div class="topbar-item" id="comboDisplay" style="display:none"></div>
+    </div>
+
+    <div class="customer-area">
+      <div class="customer-emoji" id="customerEmoji">👽</div>
+      <div class="order-bubble" id="orderBubble">—</div>
+    </div>
+
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+
+    <div class="atom-plate">
+      <div class="status-panel">
+        <span class="atom-name" id="atomName">—</span>
+        <div><span class="label">پروتون:</span> <span class="value" id="pDisplay">0</span></div>
+        <div><span class="label">نوترون:</span> <span class="value" id="nDisplay">0</span></div>
+        <div><span class="label">الکترون:</span> <span class="value" id="eDisplay">0</span></div>
+        <div><span class="label">جرم:</span> <span class="value" id="aDisplay">0</span></div>
+      </div>
+
+      <svg id="atomSvg" viewBox="-150 -150 300 300" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="protonGrad">
+            <stop offset="0%" stop-color="#ff8888"/>
+            <stop offset="100%" stop-color="#b91c1c"/>
+          </radialGradient>
+          <radialGradient id="neutronGrad">
+            <stop offset="0%" stop-color="#a8b4c4"/>
+            <stop offset="100%" stop-color="#475569"/>
+          </radialGradient>
+          <radialGradient id="electronGrad">
+            <stop offset="0%" stop-color="#fef08a"/>
+            <stop offset="100%" stop-color="#d97706"/>
+          </radialGradient>
+          <filter id="glowF" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="shellsGroup"></g>
+        <g id="electronsGroup"></g>
+        <g id="nucleusGroup"></g>
+      </svg>
+    </div>
+
+    <div class="controls">
+      <div class="particle-buttons">
+        <div class="particle-card proton" data-type="protons">
+          <div class="btn-row"><span class="dot"></span><span>پروتون</span></div>
+          <div class="count" id="pCount">0</div>
+          <button class="minus-btn" data-minus="protons" aria-label="کم کردن پروتون">−</button>
+        </div>
+        <div class="particle-card neutron" data-type="neutrons">
+          <div class="btn-row"><span class="dot"></span><span>نوترون</span></div>
+          <div class="count" id="nCount">0</div>
+          <button class="minus-btn" data-minus="neutrons" aria-label="کم کردن نوترون">−</button>
+        </div>
+        <div class="particle-card electron" data-type="electrons">
+          <div class="btn-row"><span class="dot"></span><span>الکترون</span></div>
+          <div class="count" id="eCount">0</div>
+          <button class="minus-btn" data-minus="electrons" aria-label="کم کردن الکترون">−</button>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="clear-btn" id="clearBtn">🗑</button>
+        <button class="serve-btn" id="serveBtn">🍽️ سرو کن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GAME OVER ===== -->
+  <div class="screen" id="gameOverScreen">
+    <div class="story-card">
+      <div class="result-icon">😢</div>
+      <h2 class="story-title">آشپزخانه تعطیل شد!</h2>
+      <p class="story-text">قلب‌هات تموم شد. اشکالی نداره، دوباره تلاش کن!</p>
+      <div style="display:flex;gap:10px;margin-top:20px;flex-direction:column">
+        <button class="btn" id="restartLevelBtn" style="width:100%">🔄 همین فصل</button>
+        <button class="btn secondary" id="restartGameBtn" style="width:100%">🏠 از اول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VICTORY ===== -->
+  <div class="screen" id="victoryScreen">
+    <div class="story-card">
+      <div class="result-icon">🏆</div>
+      <h2 class="story-title">استاد اتم شدی!</h2>
+      <p class="story-text">همه‌ی فصل‌ها رو با موفقیت رد کردی!<br>استاد بور بهت افتخار می‌کنه 🎓</p>
+      <div id="finalStats" style="margin:18px 0"></div>
+      <button class="btn" id="playAgainBtn" style="width:100%">🎮 دوباره بازی</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ===================== DATA =====================
+const CUSTOMER_EMOJIS = ['👽','🐱','🤖','🦊','🐸','👾','🦉','🐧','🐼','🦄','🐙','🦖','🐯','🐨','🐵'];
+
+const CHAPTERS = [
+  {
+    title:'فصل اول: آشپزخانه کوچک',
+    story:'استاد بور تازه رستورانش رو باز کرده!<br>اولین مشتری‌ها ساده‌ترین اتم دنیا یعنی <b>هیدروژن</b> رو سفارش می‌دن.<br><br>یادت باشه:<br>🔴 پروتون = هویت عنصر<br>⚪ نوترون = جرم<br>🟡 الکترون = دور هسته<br><br>همه‌ی اتم‌های هیدروژن <b>۱ پروتون</b> دارن!',
+    emoji:'👨‍🍳',
+    customers:[
+      {text:'یک هیدروژن-۱ (پروتیوم) لطفاً!', hint:'۱ پروتون، ۰ نوترون، ۱ الکترون', target:{protons:1,neutrons:0,electrons:1}, time:40},
+      {text:'دوتریوم می‌خوام! برای آب سنگین!', hint:'دوتریوم = هیدروژن-۲: ۱ پروتون، ۱ نوترون، ۱ الکترون', target:{protons:1,neutrons:1,electrons:1}, time:40},
+      {text:'تری‌تیوم برای آزمایشگاه!', hint:'تری‌تیوم = هیدروژن-۳: ۱ پروتون، ۲ نوترون، ۱ الکترون', target:{protons:1,neutrons:2,electrons:1}, time:35}
+    ],
+    outro:'آفرین! دیدی که هر سه‌تاشون هیدروژن بودن؟<br>فقط تعداد نوترون‌هاشون فرق داشت.<br>به این‌ها می‌گن <b>ایزوتوپ</b> — هم‌عنصر، ولی با جرم متفاوت!'
+  },
+  {
+    title:'فصل دوم: کربن‌شناس شو',
+    story:'حالا مشتری‌های سخت‌پسند اومدن!<br>اونا <b>کربن</b> می‌خوان.<br><br>💡 کربن یعنی: <b>۶ پروتون</b><br>عدد جرمی = پروتون + نوترون<br><br>پس کربن-۱۲ = ۶ پروتون + ۶ نوترون<br>کربن-۱۴ = ۶ پروتون + ۸ نوترون<br><br>حواست باشه، کربن-۱۴ هنوز کربنه!',
+    emoji:'👨‍🔬',
+    customers:[
+      {text:'کربن-۱۲ برای الماس!', hint:'کربن-۱۲: ۶ پروتون، ۶ نوترون، ۶ الکترون', target:{protons:6,neutrons:6,electrons:6}, time:55},
+      {text:'کربن-۱۳ برای تحقیقات!', hint:'کربن-۱۳: ۶ پروتون، ۷ نوترون، ۶ الکترون', target:{protons:6,neutrons:7,electrons:6}, time:55},
+      {text:'کربن-۱۴ برای تاریخ‌گذاری!', hint:'کربن-۱۴: ۶ پروتون، ۸ نوترون، ۶ الکترون — پرتوزاست!', target:{protons:6,neutrons:8,electrons:6}, time:50}
+    ],
+    outro:'عالی بود! کربن-۱۲ و کربن-۱۴ هر دو <b>کربن</b> هستن (۶ پروتون)،<br>ولی جرمشون با هم فرق داره.<br>دانشمندا با کربن-۱۴ سن فسیل‌ها رو حساب می‌کنن!'
+  },
+  {
+    title:'فصل سوم: چالش بزرگ',
+    story:'مشتری‌های عجیب اومدن!<br>هم هیدروژن می‌خوان، هم کربن، هم هلیم!<br><br>⏰ زمان کمتره، پس سریع‌تر فکر کن!<br>هر سفارش درست پشت هم = <b>کمبو</b> و امتیاز بیشتر!',
+    emoji:'👨‍🚀',
+    customers:[
+      {text:'دوتریوم سریع، دارم می‌رم!', hint:'دوتریوم: ۱ پروتون، ۱ نوترون، ۱ الکترون', target:{protons:1,neutrons:1,electrons:1}, time:22},
+      {text:'هلیم-۴ برای بالن!', hint:'هلیم-۴: ۲ پروتون، ۲ نوترون، ۲ الکترون', target:{protons:2,neutrons:2,electrons:2}, time:25},
+      {text:'تری‌تیوم برای شب‌نما!', hint:'تری‌تیوم: ۱ پروتون، ۲ نوترون، ۱ الکترون', target:{protons:1,neutrons:2,electrons:1}, time:22},
+      {text:'کربن-۱۴ برای راکتور!', hint:'کربن-۱۴: ۶ پروتون، ۸ نوترون، ۶ الکترون', target:{protons:6,neutrons:8,electrons:6}, time:32},
+      {text:'کربن-۱۲ برای دوستم!', hint:'کربن-۱۲: ۶ پروتون، ۶ نوترون، ۶ الکترون', target:{protons:6,neutrons:6,electrons:6}, time:28}
+    ],
+    outro:'واو! تو دیگه یه استاد اتمی! 🎓<br>حالا می‌دونی پروتون هویت رو می‌سازه، نوترون جرم رو،<br>و ایزوتوپ‌ها هم‌عنصرهایی با جرم متفاوت هستن.'
+  }
+];
+
+// ===================== STATE =====================
+const state = {
+  screen:'start',
+  chapter:0,
+  customerIndex:0,
+  hearts:3,
+  score:0,
+  combo:0,
+  maxCombo:0,
+  totalCorrect:0,
+  totalWrong:0,
+  atom:{protons:0,neutrons:0,electrons:0},
+  currentCustomer:null,
+  timeLeft:0,
+  maxTime:0,
+  timerId:null,
+  soundOn:true,
+  busy:false // prevents double clicks
+};
+
+// ===================== AUDIO =====================
+let audioCtx = null;
+function initAudio(){
+  if(!audioCtx){
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTone(freq, dur, type, vol){
+  dur = dur || 0.1; type = type || 'sine'; vol = vol || 0.06;
+  if(!state.soundOn || !audioCtx) return;
+  try{
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch(e){}
+}
+const sfxAdd    = () => playTone(500, 0.06, 'square', 0.04);
+const sfxRemove = () => playTone(300, 0.06, 'square', 0.03);
+const sfxTick   = () => playTone(900, 0.04, 'sine', 0.03);
+function sfxSuccess(){ [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,0.12,'sine',0.08), i*85)); }
+function sfxError(){ playTone(220,0.14,'sawtooth',0.07); setTimeout(()=>playTone(160,0.18,'sawtooth',0.07),85); }
+function sfxLevel(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,'sine',0.08), i*100)); }
+
+// ===================== DOM HELPERS =====================
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+const screens = {
+  start: $('startScreen'),
+  story: $('storyScreen'),
+  game: $('gameScreen'),
+  gameOver: $('gameOverScreen'),
+  victory: $('victoryScreen')
+};
+
+function showScreen(name){
+  Object.keys(screens).forEach(k => screens[k].classList.remove('active'));
+  if(screens[name]) screens[name].classList.add('active');
+  state.screen = name;
+}
+
+let toastTimer = null;
+function showToast(msg, type){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || 'info');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 1600);
+}
+
+function shakeScreen(){
+  const g = $('gameScreen');
+  g.classList.remove('shake');
+  void g.offsetWidth;
+  g.classList.add('shake');
+  setTimeout(() => g.classList.remove('shake'), 450);
+}
+
+// ===================== STORY =====================
+let pendingStoryNext = null;
+function showStory(title, text, emoji, btnText, onNext){
+  $('storyTitle').innerHTML = title;
+  $('storyText').innerHTML = text;
+  $('storyEmoji').textContent = emoji || '👨‍🍳';
+  $('storyBtn').textContent = btnText || 'ادامه ▶';
+  pendingStoryNext = onNext;
+  showScreen('story');
+}
+
+// ===================== GAME FLOW =====================
+function startGame(){
+  initAudio();
+  state.score = 0;
+  state.maxCombo = 0;
+  state.totalCorrect = 0;
+  state.totalWrong = 0;
+  startChapter(0);
+}
+
+function startChapter(idx){
+  state.chapter = idx;
+  state.customerIndex = 0;
+  state.hearts = 3;
+  state.combo = 0;
+  state.busy = false;
+  const ch = CHAPTERS[idx];
+
+  showStory(ch.title, ch.story, ch.emoji, 'شروع کار 🍳', () => {
+    showScreen('game');
+    loadCustomer();
+    startTimer();
+  });
+}
+
+function loadCustomer(){
+  const ch = CHAPTERS[state.chapter];
+  const cust = ch.customers[state.customerIndex];
+  state.currentCustomer = cust;
+  state.busy = false;
+
+  $('customerEmoji').textContent = CUSTOMER_EMOJIS[Math.floor(Math.random() * CUSTOMER_EMOJIS.length)];
+
+  $('orderBubble').innerHTML =
+    '<span>' + cust.text + '</span>' +
+    '<span class="order-hint">💡 ' + cust.hint + '</span>';
+
+  state.atom = {protons:0, neutrons:0, electrons:0};
+
+  $('levelInfo').textContent = 'فصل ' + (state.chapter + 1) + ' • ' + (state.customerIndex + 1) + '/' + ch.customers.length;
+  updateHearts();
+  updateScore();
+  updateCombo();
+  renderAtom();
+  updateControls();
+
+  state.maxTime = cust.time;
+  state.timeLeft = cust.time;
+  updateTimerBar();
+}
+
+function startTimer(){
+  if(state.timerId) clearInterval(state.timerId);
+  state.timerId = setInterval(() => {
+    if(state.screen !== 'game' || state.busy) return;
+    state.timeLeft -= 0.1;
+    updateTimerBar();
+    if(state.timeLeft > 0 && state.timeLeft < 5 &&
+       Math.abs(state.timeLeft - Math.round(state.timeLeft)) < 0.06) {
+      sfxTick();
+    }
+    if(state.timeLeft <= 0){
+      clearInterval(state.timerId);
+      state.timerId = null;
+      timeOut();
+    }
+  }, 100);
+}
+
+function updateTimerBar(){
+  const pct = Math.max(0, (state.timeLeft / state.maxTime) * 100);
+  const bar = $('timerFill');
+  bar.style.width = pct + '%';
+  bar.classList.remove('warning','danger');
+  if(pct < 30) bar.classList.add('danger');
+  else if(pct < 60) bar.classList.add('warning');
+}
+
+function timeOut(){
+  if(state.busy) return;
+  state.busy = true;
+  state.hearts--;
+  state.combo = 0;
+  updateHearts();
+  updateCombo();
+  playTone(220, 0.3, 'sawtooth', 0.08);
+  showToast('⏰ وقت تموم شد!', 'error');
+  shakeScreen();
+
+  if(state.hearts <= 0){
+    setTimeout(gameOver, 1100);
+    return;
+  }
+  setTimeout(() => {
+    const ch = CHAPTERS[state.chapter];
+    if(state.customerIndex < ch.customers.length - 1){
+      state.customerIndex++;
+      loadCustomer();
+      startTimer();
+    } else {
+      chapterComplete();
+    }
+  }, 1400);
+}
+
+function updateHearts(){
+  let s = '';
+  for(let i=0;i<3;i++){
+    s += i < state.hearts ? '❤️' : '🖤';
+  }
+  $('heartsDisplay').textContent = s;
+}
+function updateScore(){ $('scoreDisplay').textContent = '💰 ' + state.score; }
+function updateCombo(){
+  const el = $('comboDisplay');
+  if(state.combo >= 2){
+    el.style.display = '';
+    el.innerHTML = '<span class="combo-badge">🔥 ' + state.combo + 'x</span>';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ===================== ATOM RENDERING =====================
+function getElementName(protons){
+  const names = {1:'هیدروژن',2:'هلیم',3:'لیتیم',4:'بریلیم',5:'بور',6:'کربن',7:'نیتروژن',8:'اکسیژن',9:'فلوئور',10:'نئون'};
+  return names[protons] || 'ناشناخته';
+}
+
+function getAtomName(a){
+  if(a.protons === 0) return '—';
+  const name = getElementName(a.protons);
+  const mass = a.protons + a.neutrons;
+  return name + '-' + mass;
+}
+
+function updateControls(){
+  const a = state.atom;
+  $('pCount').textContent = a.protons;
+  $('nCount').textContent = a.neutrons;
+  $('eCount').textContent = a.electrons;
+  $('pDisplay').textContent = a.protons;
+  $('nDisplay').textContent = a.neutrons;
+  $('eDisplay').textContent = a.electrons;
+  $('aDisplay').textContent = a.protons + a.neutrons;
+  $('atomName').textContent = getAtomName(a);
+}
+
+function shuffleArray(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+function getNucleusLayout(count){
+  if(count === 0) return { positions: [], radius: 8 };
+  const radius = count > 20 ? 5 : (count > 12 ? 6 : (count > 5 ? 7 : 8));
+  const spacing = radius * 1.9;
+  const positions = [{x:0, y:0}];
+  let placed = 1;
+  let ring = 1;
+  const maxPerRing = 8;
+  while(placed < count){
+    const perRing = Math.min(maxPerRing, count - placed);
+    for(let i = 0; i < perRing && placed < count; i++){
+      const angle = (i / perRing) * Math.PI * 2 + (ring * 0.3);
+      positions.push({
+        x: Math.cos(angle) * ring * spacing,
+        y: Math.sin(angle) * ring * spacing
+      });
+      placed++;
+    }
+    ring++;
+  }
+  return { positions, radius };
+}
+
+function renderAtom(){
+  const a = state.atom;
+
+  // --- Nucleus ---
+  const nucG = $('nucleusGroup');
+  nucG.innerHTML = '';
+
+  const particles = [];
+  for(let i=0;i<a.protons;i++) particles.push('p');
+  for(let i=0;i<a.neutrons;i++) particles.push('n');
+  shuffleArray(particles);
+
+  const layout = getNucleusLayout(particles.length);
+  const pr = layout.radius;
+
+  particles.forEach((type, i) => {
+    const pos = layout.positions[i] || {x:0,y:0};
+    const c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('cx', pos.x);
+    c.setAttribute('cy', pos.y);
+    c.setAttribute('r', pr);
+    c.setAttribute('fill', type === 'p' ? 'url(#protonGrad)' : 'url(#neutronGrad)');
+    c.setAttribute('stroke', type === 'p' ? '#7f1d1d' : '#1e293b');
+    c.setAttribute('stroke-width', '0.4');
+    nucG.appendChild(c);
+
+    if(type === 'p' && pr >= 6){
+      const t = document.createElementNS(SVGNS, 'text');
+      t.setAttribute('x', pos.x);
+      t.setAttribute('y', pos.y + pr * 0.35);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', pr * 1.1);
+      t.setAttribute('fill', 'white');
+      t.setAttribute('font-weight', 'bold');
+      t.setAttribute('font-family', 'Arial,sans-serif');
+      t.textContent = '+';
+      nucG.appendChild(t);
+    }
+  });
+
+  // --- Shells + electrons ---
+  const shellsG = $('shellsGroup');
+  shellsG.innerHTML = '';
+  const electronsG = $('electronsGroup');
+  electronsG.innerHTML = '';
+
+  const shellCaps = [2, 8, 18];
+  const radii = [52, 92, 132];
+  let remaining = a.electrons;
+  const counts = [];
+  for(const cap of shellCaps){
+    const c = Math.min(remaining, cap);
+    counts.push(c);
+    remaining -= c;
+  }
+  if(remaining > 0) counts[counts.length - 1] += remaining;
+
+  counts.forEach((count, idx) => {
+    if(count === 0) return;
+    const r = radii[idx];
+
+    // shell circle
+    const circle = document.createElementNS(SVGNS, 'circle');
+    circle.setAttribute('cx', 0);
+    circle.setAttribute('cy', 0);
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', 'rgba(139,92,246,0.28)');
+    circle.setAttribute('stroke-width', '1.2');
+    circle.setAttribute('stroke-dasharray', '3 6');
+    shellsG.appendChild(circle);
+
+    // electron group with rotation
+    const eg = document.createElementNS(SVGNS, 'g');
+    const dur = (18 + idx * 10) + 's';
+    const from = idx % 2 === 0 ? '0' : '360';
+    const to = idx % 2 === 0 ? '360' : '0';
+
+    const anim = document.createElementNS(SVGNS, 'animateTransform');
+    anim.setAttribute('attributeName', 'transform');
+    anim.setAttribute('attributeType', 'XML');
+    anim.setAttribute('type', 'rotate');
+    anim.setAttribute('from', from + ' 0 0');
+    anim.setAttribute('to', to + ' 0 0');
+    anim.setAttribute('dur', dur);
+    anim.setAttribute('repeatCount', 'indefinite');
+    eg.appendChild(anim);
+
+    for(let i = 0; i < count; i++){
+      const angle = (i / count) * Math.PI * 2;
+      const ex = Math.cos(angle) * r;
+      const ey = Math.sin(angle) * r;
+      const e = document.createElementNS(SVGNS, 'circle');
+      e.setAttribute('cx', ex);
+      e.setAttribute('cy', ey);
+      e.setAttribute('r', 4);
+      e.setAttribute('fill', 'url(#electronGrad)');
+      e.setAttribute('filter', 'url(#glowF)');
+      eg.appendChild(e);
+    }
+    electronsG.appendChild(eg);
+  });
+}
+
+// ===================== PLAYER ACTIONS =====================
+const ATOM_LIMITS = {
+  protons: 20,
+  neutrons: 30,
+  electrons: 30
+};
+
+function addParticle(type){
+  if(state.screen !== 'game' || state.busy) return;
+  if(state.atom[type] >= ATOM_LIMITS[type]){
+    showToast('بسه دیگه! 😅', 'info');
+    return;
+  }
+  state.atom[type]++;
+  sfxAdd();
+  renderAtom();
+  updateControls();
+}
+
+function removeParticle(type){
+  if(state.screen !== 'game' || state.busy) return;
+  if(state.atom[type] <= 0) return;
+  state.atom[type]--;
+  sfxRemove();
+  renderAtom();
+  updateControls();
+}
+
+function clearAtom(){
+  if(state.screen !== 'game' || state.busy) return;
+  state.atom = {protons:0, neutrons:0, electrons:0};
+  sfxRemove();
+  renderAtom();
+  updateControls();
+}
+
+function serve(){
+  if(state.screen !== 'game' || state.busy) return;
+  const a = state.atom;
+  const t = state.currentCustomer.target;
+
+  const correct = a.protons === t.protons && a.neutrons === t.neutrons && a.electrons === t.electrons;
+
+  if(correct){
+    correctServe();
+  } else {
+    wrongServe();
+  }
+}
+
+function correctServe(){
+  state.busy = true;
+  if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+
+  state.totalCorrect++;
+  state.combo++;
+  if(state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+  const base = 20;
+  const timeBonus = Math.round(state.timeLeft * 1.5);
+  const comboBonus = (state.combo - 1) * 10;
+  const gained = base + timeBonus + comboBonus;
+  state.score += gained;
+
+  updateScore();
+  updateCombo();
+  sfxSuccess();
+  showToast('✅ آفرین! +' + gained + ' 💰', 'success');
+  screenFlashSuccess();
+
+  setTimeout(() => {
+    const ch = CHAPTERS[state.chapter];
+    if(state.customerIndex < ch.customers.length - 1){
+      state.customerIndex++;
+      loadCustomer();
+      startTimer();
+    } else {
+      chapterComplete();
+    }
+  }, 1200);
+}
+
+function wrongServe(){
+  state.totalWrong++;
+  state.combo = 0;
+  updateCombo();
+  sfxError();
+  shakeScreen();
+
+  // Educational feedback
+  const a = state.atom;
+  const t = state.currentCustomer.target;
+  let msg = '❌ اشتباهه! ';
+  if(a.protons !== t.protons){
+    msg += 'تعداد پروتون باید ' + t.protons + ' باشه. ';
+  } else if(a.neutrons !== t.neutrons){
+    msg += 'تعداد نوترون باید ' + t.neutrons + ' باشه. ';
+  } else if(a.electrons !== t.electrons){
+    msg += 'تعداد الکترون باید ' + t.electrons + ' باشه. ';
+  }
+  showToast(msg.trim(), 'error');
+}
+
+function screenFlashSuccess(){
+  const g = $('gameScreen');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;inset:0;background:radial-gradient(circle,rgba(74,222,128,.35),transparent 70%);pointer-events:none;z-index:50;animation:flashFade .7s ease-out forwards';
+  if(!document.getElementById('flashStyle')){
+    const s = document.createElement('style');
+    s.id = 'flashStyle';
+    s.textContent = '@keyframes flashFade{0%{opacity:0}30%{opacity:1}100%{opacity:0}}';
+    document.head.appendChild(s);
+  }
+  g.appendChild(overlay);
+  setTimeout(() => overlay.remove(), 750);
+}
+
+// ===================== CHAPTER / END =====================
+function chapterComplete(){
+  if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+  sfxLevel();
+  const ch = CHAPTERS[state.chapter];
+  showStory('فصل کامل شد! 🎉', ch.outro, '🎓', 'ادامه ▶', () => {
+    if(state.chapter < CHAPTERS.length - 1){
+      startChapter(state.chapter + 1);
+    } else {
+      victory();
+    }
+  });
+}
+
+function gameOver(){
+  if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+  playTone(160, 0.5, 'sawtooth', 0.09);
+  showScreen('gameOver');
+}
+
+function victory(){
+  if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+  sfxLevel();
+  const stats = $('finalStats');
+  stats.innerHTML =
+    '<div class="stat-row"><span class="label">امتیاز کل</span><span class="value">' + state.score + ' 💰</span></div>' +
+    '<div class="stat-row"><span class="label">بیشترین کمبو</span><span class="value">' + state.maxCombo + 'x 🔥</span></div>' +
+    '<div class="stat-row"><span class="label">سفارش درست</span><span class="value">' + state.totalCorrect + ' ✅</span></div>' +
+    '<div class="stat-row"><span class="label">تلاش‌های اشتباه</span><span class="value">' + state.totalWrong + ' ❌</span></div>';
+  showScreen('victory');
+}
+
+// ===================== EVENT WIRING =====================
+$('startBtn').addEventListener('click', startGame);
+
+$('storyBtn').addEventListener('click', () => {
+  const fn = pendingStoryNext;
+  pendingStoryNext = null;
+  if(fn) fn();
+});
+
+// Particle cards (add)
+document.querySelectorAll('.particle-card').forEach(card => {
+  card.addEventListener('click', (e) => {
+    // If the click originated from the minus button, ignore (handled separately)
+    if(e.target.closest('.minus-btn')) return;
+    addParticle(card.dataset.type);
+  });
+});
+
+// Minus buttons (subtract) — use both click and touchstart for responsiveness
+document.querySelectorAll('.minus-btn').forEach(btn => {
+  const handler = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    removeParticle(btn.dataset.minus);
+  };
+  btn.addEventListener('click', handler);
+});
+
+// Clear + Serve
+$('clearBtn').addEventListener('click', clearAtom);
+$('serveBtn').addEventListener('click', serve);
+
+// Restart buttons
+$('restartLevelBtn').addEventListener('click', () => startChapter(state.chapter));
+$('restartGameBtn').addEventListener('click', startGame);
+$('playAgainBtn').addEventListener('click', startGame);
+
+// Sound toggle
+$('soundToggle').addEventListener('click', () => {
+  state.soundOn = !state.soundOn;
+  $('soundToggle').textContent = state.soundOn ? '🔊' : '🔇';
+  if(state.soundOn) initAudio();
+});
+
+// Prevent double-tap zoom on iOS
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+// Initialize first screen
+(function initBg(){
+  const bg = $('bgParticles');
+  const colors = ['#ef4444','#64748b','#fbbf24','#8b5cf6','#06b6d4'];
+  for(let i = 0; i < 15; i++){
+    const p = document.createElement('div');
+    p.className = 'bg-p';
+    const size = 8 + Math.random() * 22;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDuration = (12 + Math.random() * 15) + 's';
+    p.style.animationDelay = (Math.random() * 15) + 's';
+    bg.appendChild(p);
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
